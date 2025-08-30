@@ -205,6 +205,18 @@ public final class LeavesConfig {
 
             public BlockUpdaterConfig updater = new BlockUpdaterConfig();
 
+            @GlobalConfig(value = "void-trade", validator = VoidTradeValidator.class)
+            public boolean voidTrade = false;
+
+            private static class VoidTradeValidator extends BooleanConfigValidator {
+                @Override
+                public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
+                    if (!value && old != null && LeavesConfig.modify.forceVoidTrade) {
+                        throw new IllegalArgumentException("force-void-trade is enable, void-trade always need true");
+                    }
+                }
+            }
+
             @GlobalConfigCategory("block-updater")
             public static class BlockUpdaterConfig {
                 @RemovedConfig(name = "instant-block-updater-reintroduced", category = "modify", transform = true)
@@ -380,8 +392,25 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("force-void-trade")
+        @GlobalConfig(value = "force-void-trade", validator = ForceVoidTradeValidator.class)
         public boolean forceVoidTrade = false;
+
+        private static class ForceVoidTradeValidator extends BooleanConfigValidator {
+            @Override
+            public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
+                if (value) {
+                    LeavesConfig.modify.oldMC.voidTrade = true;
+                }
+            }
+
+            @Override
+            public void runAfterLoader(Boolean value, boolean reload) {
+                if (value) {
+                    LeavesConfig.modify.oldMC.voidTrade = true;
+                }
+            }
+        }
+
 
         @GlobalConfig(value = "mc-technical-survival-mode", validator = McTechnicalModeValidator.class, lock = true)
         public boolean mcTechnicalMode = true;
